@@ -333,8 +333,8 @@ void MainWindow::on_assetCreate_clicked()
                                          tr("Asset Label:"), QLineEdit::Normal,"", &ok);
     if (ok && !text.isEmpty())
         assetLabel = text;
-    api->uploadReleaseAsset(fileName, assetLabel, getCurrentReleaseID());
-    reloadReleases();
+    if(api->uploadReleaseAsset(fileName, assetLabel, getCurrentReleaseID()))
+        reloadReleases();
 }
 
 void MainWindow::on_releaseNew_clicked()
@@ -400,14 +400,6 @@ void MainWindow::setLogInfo(QString str)
     statusLabel->setVisible(false);
     hideProgress = true;
     statusBar()->showMessage(str, 2000);
-}
-
-void MainWindow::on_toolButton_clicked()
-{
-    api->setRepo("Taulabs", "Taulabs");
-    api->setCredentials("guilhermito.santiago@gmail.com", "pedromiguel1248");
-    releaseList = api->getReleases();
-    loadReleases(releaseList);
 }
 
 void MainWindow::reenableProgress()

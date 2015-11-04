@@ -69,7 +69,6 @@ private slots:
     void setProgressBarUpload(qint64 progress, qint64 total);
     void setProgressBarDownload(qint64 progress, qint64 total);
     void setLogInfo(QString str);
-    void on_toolButton_clicked();
     void reenableProgress();
     void onPictureDownloadDone(QNetworkReply *reply);
     void on_saveSettings_clicked();

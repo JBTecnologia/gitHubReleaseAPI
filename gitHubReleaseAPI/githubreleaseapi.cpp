@@ -29,8 +29,10 @@
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
+#include <QUrlQuery>
+#include <QHttpMultiPart>
 
-#define NETWORK_TIMEOUT 250000
+#define NETWORK_TIMEOUT 25000000
 
 gitHubReleaseAPI::gitHubReleaseAPI(QObject *parent) : QObject(parent)
 {
@@ -63,6 +65,7 @@ QHash<int, gitHubReleaseAPI::release> gitHubReleaseAPI::getReleases()
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting releases");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -104,6 +107,7 @@ gitHubReleaseAPI::release gitHubReleaseAPI::getSingleRelease(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -138,6 +142,7 @@ QByteArray gitHubReleaseAPI::downloadAsset(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -162,6 +167,7 @@ QByteArray gitHubReleaseAPI::downloadAsset(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting release asset");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -205,6 +211,7 @@ gitHubReleaseAPI::GitHubAsset gitHubReleaseAPI::getAsset(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting asset");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -240,6 +247,7 @@ QList<gitHubReleaseAPI::GitHubAsset> gitHubReleaseAPI::getReleaseAssets(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting release assets");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -265,19 +273,24 @@ QList<gitHubReleaseAPI::GitHubAsset> gitHubReleaseAPI::getReleaseAssets(int id)
 
 bool gitHubReleaseAPI::uploadReleaseAsset(QString filename, QString label, int releaseID)
 {
+    emit logInfo(QString("Uploading %0 asset with label %1 to release with ID=%3").arg(filename).arg(label).arg(releaseID));
     if(releaseID < 0)
         return false;
-    QString uploadURL = getSingleRelease(releaseID).upload_url;
-    QFile file(filename);
-    if(!file.open(QIODevice::ReadOnly)) {
+    QString uploadURLStr = getSingleRelease(releaseID).upload_url;
+    QFile *file = new QFile(filename);
+    if(!file->open(QIODevice::ReadOnly)) {
         emit logError("Could not open file");
         return false;
     }
-    QByteArray data = file.readAll();
+    QByteArray data(file->readAll());
     QFileInfo info(filename);
     QString fname = info.fileName();
-    uploadURL.replace("{?name}", QString("?name=%0&label=%1").arg(fname).arg(label));
-
+    uploadURLStr = uploadURLStr.split("{?").value(0);
+    QUrlQuery query;
+    query.addQueryItem("name", fname);
+    query.addQueryItem("label", label);
+    QUrl uploadURL(uploadURLStr);
+    uploadURL.setQuery(query);
     QNetworkRequest request;
     request.setUrl(uploadURL);
     request.setRawHeader("Content-Type",QMimeDatabase().mimeTypeForFile(filename).name().toLocal8Bit());
@@ -289,6 +302,7 @@ bool gitHubReleaseAPI::uploadReleaseAsset(QString filename, QString label, int r
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while uploading release asset");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return false;
     }
     timeOutTimer.stop();
@@ -316,6 +330,7 @@ gitHubReleaseAPI::release gitHubReleaseAPI::getReleaseByTagName(QString name)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -360,6 +375,7 @@ gitHubReleaseAPI::release gitHubReleaseAPI::createRelease(gitHubReleaseAPI::newG
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while creating release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -409,6 +425,7 @@ gitHubReleaseAPI::release gitHubReleaseAPI::editRelease(int id, gitHubReleaseAPI
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while editing release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -453,6 +470,7 @@ gitHubReleaseAPI::GitHubAsset gitHubReleaseAPI::editAsset(int id, QString filena
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while editing asset");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
@@ -489,6 +507,7 @@ bool gitHubReleaseAPI::deleteAsset(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while deleting asset");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return false;
     }
     timeOutTimer.stop();
@@ -516,6 +535,7 @@ bool gitHubReleaseAPI::deleteRelease(int id)
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while deleting release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return false;
     }
     timeOutTimer.stop();
@@ -543,6 +563,7 @@ gitHubReleaseAPI::release gitHubReleaseAPI::getLatestRelease()
     if(!timeOutTimer.isActive()) {
         emit logError("Timeout while getting release");
         setLastError(TIMEOUT_ERROR);
+        reply->abort();
         return ret;
     }
     timeOutTimer.stop();
